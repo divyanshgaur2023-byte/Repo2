@@ -1,0 +1,114 @@
+File,Code
+vending_machine.v,"module vending_machine(
+    input clk,
+    input reset,
+    input coin5,
+    input coin10,
+    output reg dispense
+);
+
+reg [1:0] state, next_state;
+
+parameter S0  = 2'b00;
+parameter S5  = 2'b01;
+parameter S10 = 2'b10;
+parameter S15 = 2'b11;
+
+always @(posedge clk or posedge reset)
+begin
+    if(reset)
+        state <= S0;
+    else
+        state <= next_state;
+end
+
+always @(*)
+begin
+    case(state)
+    S0:
+        if(coin5) next_state = S5;
+        else if(coin10) next_state = S10;
+        else next_state = S0;
+    S5:
+        if(coin5) next_state = S10;
+        else if(coin10) next_state = S15;
+        else next_state = S5;
+    S10:
+        if(coin5 || coin10) next_state = S15;
+        else next_state = S10;
+    S15:
+        next_state = S0;
+    default:
+        next_state = S0;
+    endcase
+end
+
+always @(*)
+begin
+    if(state == S15)
+        dispense = 1;
+    else
+        dispense = 0;
+end
+
+endmodule"
+vending_machine_tb.v,"`timescale 1ns/1ps
+
+module vending_machine_tb;
+
+reg clk;
+reg reset;
+reg coin5;
+reg coin10;
+wire dispense;
+
+vending_machine uut(
+    .clk(clk),
+    .reset(reset),
+    .coin5(coin5),
+    .coin10(coin10),
+    .dispense(dispense)
+);
+
+always #5 clk = ~clk;
+
+initial
+begin
+    clk = 0;
+    reset = 1;
+    coin5 = 0;
+    coin10 = 0;
+
+    #10 reset = 0;
+
+    #10 coin5 = 1;
+    #10 coin5 = 0;
+
+    #10 coin5 = 1;
+    #10 coin5 = 0;
+
+    #10 coin5 = 1;
+    #10 coin5 = 0;
+
+    #20;
+
+    coin10 = 1;
+    #10 coin10 = 0;
+
+    #10 coin5 = 1;
+    #10 coin5 = 0;
+
+    #20;
+
+    coin10 = 1;
+    #10 coin10 = 0;
+
+    #10 coin10 = 1;
+    #10 coin10 = 0;
+
+    #30;
+
+    $finish;
+end
+
+endmodule"
